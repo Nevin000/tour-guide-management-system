@@ -1,0 +1,316 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client_new"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String         @id @default(uuid()) @db.Uuid
+  firstName       String         @db.VarChar(100)
+  lastName        String         @db.VarChar(100)
+  gender          Gender?
+  email           String         @unique @db.VarChar(255)
+  phone           String         @unique @db.VarChar(20)
+  password        String         @db.VarChar(255)
+  country         String         @db.VarChar(100)
+  stateProvince   String         @db.VarChar(100)
+  profileImage    String?
+  role            Role           @default(CUSTOMER)
+  status          UserStatus     @default(ACTIVE)
+  emailVerifiedAt DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+  refreshTokens   RefreshToken[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([country])
+  @@index([role])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  token     String   @unique
+  userId    String   @db.Uuid
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+model ContactMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(100)
+  email     String   @db.VarChar(255)
+  phone     String?  @db.VarChar(50)
+  subject   String   @db.VarChar(200)
+  message   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@map("contact_messages")
+}
+
+model AdminOtp {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique @db.VarChar(255)
+  code      String   @db.VarChar(10)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("admin_otps")
+}
+
+model GalleryItem {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String   @db.VarChar(200)
+  url         String   @db.Text
+  category    String   @db.VarChar(100)
+  altText     String?  @db.VarChar(200)
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("gallery_items")
+}
+
+model Destination {
+  id               String  @id @default(uuid()) @db.Uuid
+  name             String  @db.VarChar(200)
+  slug             String  @unique @db.VarChar(255)
+  shortDescription String? @db.Text
+  description      String  @db.Text
+  image            String  @db.Text
+  ogImage          String? @db.Text
+
+  location String? @db.VarChar(200)
+  district String? @db.VarChar(100)
+  province String? @db.VarChar(100)
+
+  category String? @db.VarChar(100)
+  bestTime String? @db.VarChar(100)
+  duration String? @db.VarChar(100)
+  budget   String? @db.VarChar(100)
+
+  latitude  Float?
+  longitude Float?
+
+  weatherAvg    String? @db.VarChar(100)
+  weatherRain   String? @db.VarChar(100)
+  howToGetThere String? @db.Text
+
+  seoTitle       String? @db.VarChar(200)
+  seoDescription String? @db.Text
+
+  featured  Boolean @default(false)
+  published Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  images     DestinationImage[]
+  highlights DestinationHighlight[]
+  blogPosts  BlogPost[]
+
+  @@map("destinations")
+}
+
+model DestinationImage {
+  id            String      @id @default(uuid()) @db.Uuid
+  url           String      @db.Text
+  destinationId String      @db.Uuid
+  destination   Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("destination_images")
+}
+
+model DestinationHighlight {
+  id            String      @id @default(uuid()) @db.Uuid
+  title         String      @db.VarChar(200)
+  description   String      @db.Text
+  image         String      @db.Text
+  destinationId String      @db.Uuid
+  destination   Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("destination_highlights")
+}
+
+model PlaceMentioned {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(200)
+  url       String?  @db.Text
+  latitude  Float?
+  longitude Float?
+  postId    String   @db.Uuid
+  post      BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("places_mentioned")
+}
+
+model BlogCategory {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String     @unique @db.VarChar(100)
+  slug        String     @unique @db.VarChar(120)
+  description String?    @db.Text
+  posts       BlogPost[]
+
+  @@map("blog_categories")
+}
+
+model BlogTag {
+  id    String        @id @default(uuid()) @db.Uuid
+  name  String        @unique @db.VarChar(80)
+  slug  String        @unique @db.VarChar(100)
+  posts BlogPostTag[]
+
+  @@map("blog_tags")
+}
+
+model BlogPost {
+  id         String  @id @default(uuid()) @db.Uuid
+  title      String  @db.VarChar(300)
+  slug       String  @unique @db.VarChar(350)
+  excerpt    String? @db.Text
+  content    String  @db.Text
+  coverImage String? @db.Text
+  ogImage    String? @db.Text
+
+  categoryId String?       @db.Uuid
+  category   BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags       BlogPostTag[]
+
+  destinationId String?      @db.Uuid
+  destination   Destination? @relation(fields: [destinationId], references: [id], onDelete: SetNull)
+
+  placesMentioned PlaceMentioned[]
+
+  location    String? @db.VarChar(200)
+  timeNeeded  String? @db.VarChar(100)
+  bestTime    String? @db.VarChar(100)
+  latitude    Float?
+  longitude   Float?
+  articleType String? @db.VarChar(100)
+
+  authorName  String  @default("Ceylon Vidu Tours") @db.VarChar(150)
+  authorImage String? @db.Text
+
+  status   BlogStatus @default(DRAFT)
+  featured Boolean    @default(false)
+  views    Int        @default(0)
+
+  seoTitle       String? @db.VarChar(200)
+  seoDescription String? @db.Text
+  seoKeywords    String? @db.VarChar(500)
+
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([slug])
+  @@index([status])
+  @@index([categoryId])
+  @@index([publishedAt])
+  @@map("blog_posts")
+}
+
+model BlogPostTag {
+  postId String   @db.Uuid
+  tagId  String   @db.Uuid
+  post   BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("blog_post_tags")
+}
+
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model TourPackage {
+  id            String  @id @default(uuid()) @db.Uuid
+  title         String  @db.VarChar(300)
+  slug          String  @unique @db.VarChar(350)
+  category      String  @db.VarChar(100)
+  duration      String  @db.VarChar(100)
+  daysCount     Int     @default(1)
+  nightsCount   Int     @default(0)
+  price         Float
+  discountPrice Float?
+  rating        Float   @default(5.0)
+  reviewsCount  Int     @default(0)
+  image         String  @db.Text
+  ogImage       String? @db.Text
+  overview      String  @db.Text
+  destinations  String  @db.Text
+  highlights    String  @db.Text
+  itinerary     String  @db.Text
+  included      String  @db.Text
+  excluded      String  @db.Text
+  featuredTag   String? @db.VarChar(100)
+  featured      Boolean @default(false)
+  published     Boolean @default(true)
+  maxGroupSize  Int?    @default(12)
+  difficulty    String? @db.VarChar(50)
+  startLocation String? @db.VarChar(200)
+  endLocation   String? @db.VarChar(200)
+
+  seoTitle       String? @db.VarChar(200)
+  seoDescription String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  inquiries TourInquiry[]
+
+  @@index([slug])
+  @@index([category])
+  @@index([featured])
+  @@index([published])
+  @@map("tour_packages")
+}
+
+model TourInquiry {
+  id             String       @id @default(uuid()) @db.Uuid
+  tourId         String?      @db.Uuid
+  tour           TourPackage? @relation(fields: [tourId], references: [id], onDelete: SetNull)
+  name           String       @db.VarChar(100)
+  email          String       @db.VarChar(255)
+  phone          String       @db.VarChar(50)
+  travelDate     String?      @db.VarChar(50)
+  travelersCount Int          @default(1)
+  message        String?      @db.Text
+  status         String       @default("PENDING") @db.VarChar(50)
+  createdAt      DateTime     @default(now())
+
+  @@map("tour_inquiries")
+}
